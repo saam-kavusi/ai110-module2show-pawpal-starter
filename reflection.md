@@ -27,6 +27,7 @@
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
+- Yes it did, scheduer had no direct reference to owner. Scheduler never directly interacted with pet. Collect tasks in scheduler does all the heavy lifting so looping through every pet under owner could get messy fast. detect conflicts had no return type or output plan. Age was a string which could get stale so we changed that and owner was not a dataclass. This resolved all bottle necks and missing relationships.
 
 ---
 
