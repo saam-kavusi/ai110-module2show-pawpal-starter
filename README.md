@@ -70,11 +70,6 @@ The tests cover the following:
 - Filtering by completion status
 - Empty or no-match edge cases
 
-
-## Confidence Level: ★★★★★
-
-- All current tests are passing, and the main scheduling features are working as expected.
-
 ## Challenge 1
 - As an extra algorithmic feature, I added a      
   findNextAvailableSlot method to the Scheduler     

@@ -51,12 +51,14 @@
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+- I used AI as a brainstorming, debugging, and refactoring tool. Somethings would not come out looking nice or had a weird functionality and AI would help me change it
+- Also, funny enough, there were times where AI would tell me to that i was essentially to focused on a small thing and to move forward and we can comeback and fix it later if we want to. 
+- I tend to prompt as if i was speaking to another human. When i would want to prompt claude to write code for me i would to talk with ChatGPT like a human figure out whats being asked and wanted then we would write the prompt for claude to execute the code. After code was executed and review it and then feed it into ChatGPT and see if it agreed with me. 
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+- When it suggested changing the scheduler logic in a more “Pythonic” way using a slightly more compact version of the conflict detection algorithm. I chose to keep my original version instead because it was easier for me to read, explain, and understand. 
+- I compared suggestions against the project structure and made sure it matched my class design, method names, and assignment requirements. 
 
 ---
 
@@ -64,13 +66,13 @@
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+- I tested task completion, task addition, sorting order, priority based ordering, recurring task creation, conflict detection, filtering, next available slot, and JSON persistence.
+- They verified both the main happy path features and the edge cases where the program could easily break.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+- I have 5 star confidence. I tested the main scheduling feature, important edge cases, and seeral other features with pytest and manual UI checks. 
+- If I ha dmore time I'd test things like completing the same recurring task multiple times, loading partially empty or malformed JSON data, and multiple owners and pets with more complex sechedule.
 
 ---
 
@@ -78,15 +80,15 @@
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+- I almost made an app using AI which is pretty cool in itself. I never thought id be using AI to work with AI to help me become better at coding and making things come to life. 
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+- More Emojis and more of the UI/front-end. 
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+- Ai is a great tool but like any tool its only as good as the hands that use it. 
 
 
 ## Prompt Comparison
