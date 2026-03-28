@@ -87,3 +87,10 @@
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+
+
+## Prompt Comparison
+
+- For the multi-model prompt comparison, I compared responses from Claude and ChatGPT on how to extend PawPal+ with JSON persistence and scheduling improvements. Claude was strong at producing direct implementation steps and making file-by-file edits, which was helpful when I wanted fast code changes. ChatGPT was more helpful for planning the safest approach first, especially when checking whether the design still matched my current architecture and warning me about edge cases like saving multiple owners instead of only one.
+
+- Overall, Claude gave me a fast implementation oriented workflow, while ChatGPT gave me stronger guidance for reasoning through tradeoffs and keeping the project structure clean. I found Claude’s responses useful for coding speed, but ChatGPT’s responses felt more modular and better for understanding why certain design choices were safer or more maintainable.

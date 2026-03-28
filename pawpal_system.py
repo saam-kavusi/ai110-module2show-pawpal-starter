@@ -1,6 +1,33 @@
+import json
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import List
+
+DATA_FILE = os.path.join(os.path.dirname(__file__), "data.json")
+
+
+def save_owners(owners: dict):
+    """Save all owners (and their pets/tasks) to data.json.
+
+    Args:
+        owners: The st.session_state.owners dict mapping owner name -> Owner.
+    """
+    data = {name: owner.to_dict() for name, owner in owners.items()}
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def load_owners() -> dict:
+    """Load owners from data.json and return them as a dict of Owner objects.
+
+    Returns an empty dict if the file does not exist yet.
+    """
+    if not os.path.exists(DATA_FILE):
+        return {}
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+    return {name: Owner.from_dict(owner_data) for name, owner_data in data.items()}
 
 
 @dataclass
@@ -15,6 +42,29 @@ class Task:
     def markComplete(self):
         """Mark this task as completed."""
         self.completed = True
+
+    def to_dict(self) -> dict:
+        """Convert this Task to a plain dictionary for JSON serialization."""
+        return {
+            "taskName": self.taskName,
+            "dueTime": self.dueTime.isoformat(),
+            "frequency": self.frequency,
+            "priority": self.priority,
+            "petName": self.petName,
+            "completed": self.completed,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "Task":
+        """Reconstruct a Task from a dictionary loaded from JSON."""
+        return Task(
+            taskName=data["taskName"],
+            dueTime=datetime.fromisoformat(data["dueTime"]),
+            frequency=data["frequency"],
+            priority=data["priority"],
+            petName=data["petName"],
+            completed=data["completed"],
+        )
 
     def getDetails(self):
         """Return a formatted string summary of the task's details and status."""
@@ -47,6 +97,33 @@ class Pet:
         """Return all tasks assigned to this pet."""
         return self.tasks
 
+    def to_dict(self) -> dict:
+        """Convert this Pet to a plain dictionary for JSON serialization."""
+        return {
+            "petName": self.petName,
+            "type": self.type,
+            "breed": self.breed,
+            "dateOfBirth": self.dateOfBirth.isoformat(),
+            "allergies": self.allergies,
+            "medicalNotes": self.medicalNotes,
+            "tasks": [task.to_dict() for task in self.tasks],
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "Pet":
+        """Reconstruct a Pet (and its tasks) from a dictionary loaded from JSON."""
+        pet = Pet(
+            petName=data["petName"],
+            type=data["type"],
+            breed=data["breed"],
+            dateOfBirth=datetime.fromisoformat(data["dateOfBirth"]),
+            allergies=data["allergies"],
+            medicalNotes=data["medicalNotes"],
+        )
+        for task_data in data.get("tasks", []):
+            pet.addTask(Task.from_dict(task_data))
+        return pet
+
 
 @dataclass
 class Owner:
@@ -64,6 +141,29 @@ class Owner:
         """Return all pets belonging to this owner."""
         return self.pets
 
+    def to_dict(self) -> dict:
+        """Convert this Owner to a plain dictionary for JSON serialization."""
+        return {
+            "ownerName": self.ownerName,
+            "phone": self.phone,
+            "address": self.address,
+            "emergencyContact": self.emergencyContact,
+            "pets": [pet.to_dict() for pet in self.pets],
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "Owner":
+        """Reconstruct an Owner (with pets and tasks) from a dictionary loaded from JSON."""
+        owner = Owner(
+            ownerName=data["ownerName"],
+            phone=data["phone"],
+            address=data["address"],
+            emergencyContact=data["emergencyContact"],
+        )
+        for pet_data in data.get("pets", []):
+            owner.addPet(Pet.from_dict(pet_data))
+        return owner
+
 
 class Scheduler:
     def __init__(self, owner: Owner):
@@ -78,13 +178,14 @@ class Scheduler:
                 self.allTasks.append(task)
 
     def sortByTime(self):
-        """Sort allTasks in ascending order by dueTime, then by priority if times match.
+        """Sort allTasks by priority first, then by dueTime within each priority level.
 
-        Uses a tuple sort key so that when two tasks share the same dueTime,
-        the one with the lower priority number (higher urgency) comes first.
+        Lower priority numbers mean higher urgency (1 = high, 2 = medium, 3 = low),
+        so the most urgent tasks always appear first regardless of their scheduled time.
+        Within the same priority level, earlier tasks come first.
         Modifies allTasks in place — does not return a new list.
         """
-        self.allTasks.sort(key=lambda task: (task.dueTime, task.priority))
+        self.allTasks.sort(key=lambda task: (task.priority, task.dueTime))
 
     def markTaskComplete(self, task: Task):
         """Mark a task complete and schedule the next occurrence if Daily or Weekly.
@@ -177,3 +278,32 @@ class Scheduler:
         self.collectTasks()
         self.sortByTime()
         return self.allTasks
+
+    def findNextAvailableSlot(self, start_time: datetime, duration_minutes: int = 60) -> datetime:
+        """Find the next open time slot starting from start_time.
+
+        Collects and sorts all tasks, then checks whether start_time
+        conflicts with any existing task. If it does, the method moves
+        forward in 30-minute increments and keeps checking until it finds
+        a time that is not already taken.
+
+        Args:
+            start_time: The earliest datetime to consider for the new slot.
+            duration_minutes: How long the slot needs to be (default 60).
+                              Currently used as context — simple conflict
+                              check compares exact task times only.
+
+        Returns:
+            The first datetime starting at or after start_time that does
+            not match any existing task's dueTime.
+        """
+        self.collectTasks()
+        self.sortByTime()
+
+        booked_times = {task.dueTime for task in self.allTasks}
+
+        slot = start_time
+        while slot in booked_times:
+            slot += timedelta(minutes=30)
+
+        return slot

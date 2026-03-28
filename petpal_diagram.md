@@ -38,13 +38,16 @@ classDiagram
         +List allTasks
         +collectTasks()
         +sortByTime()
-        +detectConflicts()
-        +getDailySchedule()
+        +markTaskComplete(task)
+        +filterByPet(petName) List~Task~
+        +filterByStatus(completed) List~Task~
+        +detectConflicts() List~str~
+        +getDailySchedule() List~Task~
     }
 
     Owner "1" --> "1..*" Pet : owns
     Pet "1" --> "0..*" Task : has
     Scheduler "1" --> "1" Owner : schedules for
-    Scheduler "1" --> "0..*" Task : manages
-    Task --> Pet : belongs to
+    Scheduler "1" --> "0..*" Task : collects and manages
+    Scheduler --> Pet : adds next occurrence via markTaskComplete
 ```

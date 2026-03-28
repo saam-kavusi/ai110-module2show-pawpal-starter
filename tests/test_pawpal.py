@@ -3,7 +3,9 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from datetime import datetime, timedelta
-from pawpal_system import Task, Pet, Owner, Scheduler
+from pawpal_system import Task, Pet, Owner, Scheduler, save_owners, load_owners
+import pawpal_system
+from main import status_label, priority_label
 
 
 # --- Helpers ---
@@ -86,6 +88,20 @@ def test_sort_orders_tasks_by_time():
 
     hours = [task.dueTime.hour for task in scheduler.allTasks]
     assert hours == [7, 9, 18]
+
+
+def test_sort_priority_before_time():
+    """A high-priority task scheduled later in the day should appear before a low-priority task scheduled earlier."""
+    owner, pet = make_owner_with_pet()
+    pet.addTask(make_task("Low Priority Early",  hour=7,  priority=3))
+    pet.addTask(make_task("High Priority Late",  hour=18, priority=1))
+
+    scheduler = Scheduler(owner)
+    scheduler.collectTasks()
+    scheduler.sortByTime()
+
+    assert scheduler.allTasks[0].taskName == "High Priority Late"
+    assert scheduler.allTasks[1].taskName == "Low Priority Early"
 
 
 def test_sort_tie_breaks_by_priority():
@@ -215,3 +231,79 @@ def test_filter_by_status_returns_completed_and_pending():
 
     assert len(pending) == 1
     assert pending[0].taskName == "Evening Feed"
+
+
+def test_status_label():
+    """status_label should map True to Done and False to Pending."""
+    assert status_label(True) == "✅ Done"
+    assert status_label(False) == "⏳ Pending"
+
+
+def test_priority_label():
+    """priority_label should map 1/2/3 to the correct emoji labels."""
+    assert priority_label(1) == "🔴 High"
+    assert priority_label(2) == "🟡 Medium"
+    assert priority_label(3) == "🟢 Low"
+
+
+def test_json_persistence_round_trip(tmp_path, monkeypatch):
+    """Saving and loading owners should fully reconstruct the Owner/Pet/Task tree."""
+    # Point DATA_FILE at a temp file so the real data.json is never touched
+    temp_file = tmp_path / "test_data.json"
+    monkeypatch.setattr(pawpal_system, "DATA_FILE", str(temp_file))
+
+    # Build owner → pet → task
+    owner = Owner(ownerName="Jordan", phone="", address="", emergencyContact="")
+    pet = Pet(
+        petName="Mochi",
+        type="cat",
+        breed="",
+        dateOfBirth=datetime(2021, 6, 1),
+        allergies="",
+        medicalNotes=""
+    )
+    task = Task(
+        taskName="Evening Feed",
+        dueTime=datetime(2026, 3, 27, 18, 0),
+        frequency="daily",
+        priority=1,
+        petName="Mochi"
+    )
+    pet.addTask(task)
+    owner.addPet(pet)
+
+    # Save, then load back
+    save_owners({"Jordan": owner})
+    loaded = load_owners()
+
+    # Assertions
+    assert "Jordan" in loaded
+    loaded_owner = loaded["Jordan"]
+    assert len(loaded_owner.getPets()) == 1
+
+    loaded_pet = loaded_owner.getPets()[0]
+    assert len(loaded_pet.getTasks()) == 1
+
+    loaded_task = loaded_pet.getTasks()[0]
+    assert loaded_task.taskName == "Evening Feed"
+    assert loaded_task.dueTime == datetime(2026, 3, 27, 18, 0)
+    assert loaded_task.completed == False
+
+
+def test_find_next_available_slot_skips_booked_times():
+    """findNextAvailableSlot should skip 7:00 and 7:30 and return 8:00."""
+    owner, pet = make_owner_with_pet()
+    pet.addTask(make_task("Morning Walk", hour=7))
+    pet.addTask(Task(
+        taskName="Post-Walk Feed",
+        dueTime=datetime(2026, 3, 27, 7, 30),
+        frequency="once",
+        priority=1,
+        petName="Buddy"
+    ))
+
+    scheduler = Scheduler(owner)
+    scheduler.collectTasks()
+
+    result = scheduler.findNextAvailableSlot(datetime(2026, 3, 27, 7, 0))
+    assert result == datetime(2026, 3, 27, 8, 0)
