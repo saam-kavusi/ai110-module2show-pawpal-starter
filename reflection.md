@@ -35,13 +35,14 @@
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+- My scheduler considers due time, priority, frequency, completion status, and pet name. Due time is the main constraint because tasks should be organized in chronological order. Priority is used as a tie-breaker when tasks share the same time. Frequency is used for recurring tasks, completion status helps separate pending and finished tasks, and pet name allows filtering for a specific pet.
+
+- I decided time mattered most because the main job of a scheduler is to show what should happen and when. Priority mattered next because it helps when tasks are scheduled at the same time. I focused on these constraints because they were the most useful and simplest to implement for this project.
 
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+- My scheduler uses a sort then scan approach for conflict detection. This makes the logic simpler and avoids comparing every task against every other task, but it only checks whether tasks happen at the exact same time instead of handling more advanced overlapping durations.
 
 ---
 
